@@ -3,6 +3,9 @@ name: Test BYU-Idaho Job Scraper
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
