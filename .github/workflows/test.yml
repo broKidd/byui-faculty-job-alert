@@ -1,13 +1,18 @@
 name: BYU-Idaho Faculty Job Alert
 
 on:
+  schedule:
+    # Monday at 9:00 AM Mountain Time
+    - cron: "0 15 * * 1"
+
+    # Friday at 9:00 AM Mountain Time
+    - cron: "0 15 * * 5"
+
+  # Allows you to run it manually whenever you want
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  check-jobs:
+  send-job-alert:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,16 +29,8 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
 
-      - name: Check for new BYU-Idaho faculty jobs
+      - name: Scrape jobs and send email
         env:
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python byui_jobs.py
-
-      - name: Save updated job list
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add known_jobs.json
-          git diff --cached --quiet || git commit -m "Update known BYU-Idaho jobs"
-          git push
