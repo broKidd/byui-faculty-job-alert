@@ -1,4 +1,4 @@
-name: Test BYU-Idaho Job Scraper
+name: BYU-Idaho Faculty Job Alert
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  test:
+  check-jobs:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,10 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
 
-      - name: Run job scraper
+      - name: Check for new BYU-Idaho faculty jobs
+        env:
+          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python byui_jobs.py
 
       - name: Save updated job list
@@ -34,9 +37,3 @@ jobs:
           git add known_jobs.json
           git diff --cached --quiet || git commit -m "Update known BYU-Idaho jobs"
           git push
-
-      - name: Send test email
-        env:
-          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: python test_email.py
