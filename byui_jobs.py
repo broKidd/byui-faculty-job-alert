@@ -64,6 +64,10 @@ def get_jobs():
         timeout=30,
     )
 
+    print("API status:", response.status_code)
+    print("API response:")
+    print(response.text)
+
     response.raise_for_status()
 
     return response.json()
