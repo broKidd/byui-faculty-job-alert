@@ -1,10 +1,4 @@
-import requests
-
-WORKDAY_BASE_URL = "https://wd501.myworkdaysite.com"
-WORKDAY_JOBS_URL = (
-    "https://wd501.myworkdaysite.com/"
-    "wday/cxs/byui/BYU-Idaho_Faculty_Opportunities/jobs"
-)
+from playwright.sync_api import sync_playwright
 
 FACULTY_PAGE_URL = (
     "https://wd501.myworkdaysite.com/"
@@ -13,88 +7,75 @@ FACULTY_PAGE_URL = (
 )
 
 
-def get_jobs():
-    session = requests.Session()
-
-    # First visit the careers page.
-    # This gives Workday the session cookies and CSRF token
-    # that it expects for the jobs API request.
-    page_response = session.get(
-        FACULTY_PAGE_URL,
-        headers={
-            "Accept": "text/html",
-            "User-Agent": "Mozilla/5.0",
-        },
-        timeout=30,
-    )
-
-    page_response.raise_for_status()
-
-    # Workday places the CSRF token in this cookie.
-    csrf_token = session.cookies.get("CALYPSO_CSRF_TOKEN")
-
-    if not csrf_token:
-        raise RuntimeError(
-            "Could not obtain CALYPSO_CSRF_TOKEN from Workday."
+def main():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True
         )
 
-    payload = {
-        "appliedFacets": {
-            "timeType": [
-                "78f926c7a502100191873747b0010000"
-            ]
-        },
-        "limit": 100,
-        "offset": 0,
-        "searchText": "",
-    }
+        page = browser.new_page()
 
-    response = session.post(
-        WORKDAY_JOBS_URL,
-        json=payload,
-        headers={
-            "Accept": "application/json",
-            "Accept-Language": "en-US",
-            "Content-Type": "application/json",
-            "Origin": WORKDAY_BASE_URL,
-            "Referer": FACULTY_PAGE_URL,
-            "User-Agent": "Mozilla/5.0",
-            "X-Calypso-CSRF-Token": csrf_token,
-        },
-        timeout=30,
-    )
+        jobs_response = None
 
-    print("API status:", response.status_code)
-    print("API response:")
-    print(response.text)
+        def handle_response(response):
+            nonlocal jobs_response
 
-    response.raise_for_status()
+            if (
+                "/wday/cxs/byui/"
+                "BYU-Idaho_Faculty_Opportunities/jobs"
+                in response.url
+            ):
+                print("Found Workday jobs response!")
+                print("Status:", response.status)
 
-    return response.json()
+                if response.status == 200:
+                    jobs_response = response
 
+        page.on("response", handle_response)
 
-def main():
-    data = get_jobs()
+        print("Opening BYU-Idaho faculty jobs page...")
 
-    print(f"Total jobs found: {data['total']}")
-    print()
+        page.goto(
+            FACULTY_PAGE_URL,
+            wait_until="networkidle",
+            timeout=60000,
+        )
 
-    for job in data["jobPostings"]:
-        title = job["title"]
-        job_id = job["bulletFields"][0]
-        posting_end = job["bulletFields"][1]
-        location = job["locationsText"]
-        path = job["externalPath"]
+        # Give Workday a little extra time to finish
+        # its background requests.
+        page.wait_for_timeout(5000)
 
-        job_url = f"{WORKDAY_BASE_URL}{path}"
+        if jobs_response is None:
+            print("ERROR: Could not find the Workday jobs response.")
+            browser.close()
+            return
 
-        print(f"Job ID: {job_id}")
-        print(f"Title: {title}")
-        print(f"Location: {location}")
-        print(f"Posted: {job['postedOn']}")
-        print(posting_end)
-        print(f"URL: {job_url}")
-        print("-" * 80)
+        data = jobs_response.json()
+
+        print()
+        print(f"Total jobs found: {data['total']}")
+        print()
+
+        for job in data["jobPostings"]:
+            title = job["title"]
+            job_id = job["bulletFields"][0]
+            posting_end = job["bulletFields"][1]
+            location = job["locationsText"]
+            path = job["externalPath"]
+
+            job_url = (
+                f"https://wd501.myworkdaysite.com{path}"
+            )
+
+            print(f"Job ID: {job_id}")
+            print(f"Title: {title}")
+            print(f"Location: {location}")
+            print(f"Posted: {job['postedOn']}")
+            print(posting_end)
+            print(f"URL: {job_url}")
+            print("-" * 80)
+
+        browser.close()
 
 
 if __name__ == "__main__":
