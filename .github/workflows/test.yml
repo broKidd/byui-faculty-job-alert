@@ -2,11 +2,11 @@ name: BYU-Idaho Faculty Job Alert
 
 on:
   schedule:
-    # Monday at 9:00 AM Mountain Time
-    - cron: "0 15 * * 1"
+    - cron: "17 8 * * 1"
+      timezone: "America/Denver"
 
-    # Friday at 9:00 AM Mountain Time
-    - cron: "0 15 * * 5"
+    - cron: "17 8 * * 4"
+      timezone: "America/Denver"
 
   # Allows you to run it manually whenever you want
   workflow_dispatch:
