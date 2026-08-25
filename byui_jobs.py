@@ -1,222 +1,34 @@
-import os
-import smtplib
-from email.message import EmailMessage
+KEYWORDS = {
+    "web development": 10,
+    "software": 10,
+    "computer science": 10,
+    "programming": 10,
 
-from playwright.sync_api import sync_playwright
+    "web": 8,
+    "development": 8,
 
+    "engineering": 9,
+    "computer": 9,
 
-FACULTY_PAGE_URL = (
-    "https://wd501.myworkdaysite.com/"
-    "recruiting/byui/BYU-Idaho_Faculty_Opportunities"
-    "?timeType=78f926c7a502100191873747b0010000"
-)
+    "information systems": 6,
+    "information technology": 6,
+    "technology": 6,
 
-# This is the correct base URL for individual job postings.
-BASE_URL = (
-    "https://wd501.myworkdaysite.com"
-    "/en-US/recruiting/byui/BYU-Idaho_Faculty_Opportunities"
-)
+    "data": 5,
+    "cybersecurity": 5,
 
-# Email address that will receive the job alerts.
-RECIPIENT_EMAIL = "dafeed00@yahoo.com"
+    "database": 5,
+    "databases": 5,
 
+    "javascript": 10,
+    "python": 10,
+    "java": 10,
+    "react": 10,
+    "typescript": 10,
 
-def get_jobs():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+    "network": 5,
+    "networking": 5,
 
-        jobs_response = None
-
-        def handle_response(response):
-            nonlocal jobs_response
-
-            if (
-                "/wday/cxs/byui/"
-                "BYU-Idaho_Faculty_Opportunities/jobs"
-                in response.url
-                and response.status == 200
-            ):
-                jobs_response = response
-
-        page.on("response", handle_response)
-
-        print("Opening BYU-Idaho faculty jobs page...")
-
-        page.goto(
-            FACULTY_PAGE_URL,
-            wait_until="networkidle",
-            timeout=60000,
-        )
-
-        # Give Workday additional time to finish loading.
-        page.wait_for_timeout(5000)
-
-        if jobs_response is None:
-            browser.close()
-            raise RuntimeError(
-                "Could not find the Workday jobs response."
-            )
-
-        data = jobs_response.json()
-
-        browser.close()
-
-    jobs = []
-
-    for job in data["jobPostings"]:
-        jobs.append(
-            {
-                "id": job["bulletFields"][0],
-                "title": job["title"],
-                "location": job["locationsText"],
-                "posted": job["postedOn"],
-                "posting_end": job["bulletFields"][1],
-                "url": BASE_URL + job["externalPath"],
-            }
-        )
-
-    return jobs
-
-
-def send_email(jobs):
-    gmail_username = os.environ["GMAIL_USERNAME"]
-    gmail_password = os.environ["GMAIL_APP_PASSWORD"]
-
-    message = EmailMessage()
-
-    message["Subject"] = (
-        f"BYU-Idaho Faculty Job Openings ({len(jobs)} positions)"
-    )
-
-    message["From"] = gmail_username
-    message["To"] = RECIPIENT_EMAIL
-
-    # ---------------------------------------------------------
-    # Plain-text version of the email
-    # ---------------------------------------------------------
-
-    text = "BYU-IDAHO FACULTY JOB OPENINGS\n\n"
-
-    text += (
-        f"{len(jobs)} current full-time faculty positions:\n\n"
-    )
-
-    for job in jobs:
-        text += f"{job['title']}\n"
-        text += f"Job ID: {job['id']}\n"
-        text += f"Location: {job['location']}\n"
-        text += f"{job['posting_end']}\n"
-        text += f"{job['url']}\n"
-
-        text += "\n" + "-" * 70 + "\n\n"
-
-    message.set_content(text)
-
-    # ---------------------------------------------------------
-    # HTML version of the email
-    # ---------------------------------------------------------
-
-    html = """
-    <html>
-    <body style="
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-    ">
-
-        <h2>BYU-Idaho Faculty Job Openings</h2>
-
-        <p>
-            Here are the current full-time faculty positions
-            listed by BYU-Idaho.
-        </p>
-    """
-
-    for job in jobs:
-        html += f"""
-        <div style="
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        ">
-
-            <h3 style="margin-top: 0;">
-                {job['title']}
-            </h3>
-
-            <p>
-                <strong>Job ID:</strong> {job['id']}<br>
-                <strong>Location:</strong> {job['location']}<br>
-                <strong>{job['posting_end']}</strong>
-            </p>
-
-            <p>
-                <a
-                    href="{job['url']}"
-                    style="
-                        display: inline-block;
-                        padding: 10px 15px;
-                        background-color: #0066cc;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 5px;
-                    "
-                >
-                    View Job Posting
-                </a>
-            </p>
-
-        </div>
-        """
-
-    html += """
-        <p style="
-            color: #777;
-            font-size: 12px;
-            margin-top: 25px;
-        ">
-            This email was automatically generated by the
-            BYU-Idaho Faculty Job Alert.
-        </p>
-
-    </body>
-    </html>
-    """
-
-    message.add_alternative(html, subtype="html")
-
-    # ---------------------------------------------------------
-    # Send through Gmail
-    # ---------------------------------------------------------
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(
-            gmail_username,
-            gmail_password
-        )
-
-        smtp.send_message(message)
-
-    print(
-        f"Email sent successfully to {RECIPIENT_EMAIL}!"
-    )
-
-
-def main():
-    jobs = get_jobs()
-
-    print(f"Total jobs found: {len(jobs)}")
-
-    if not jobs:
-        print("No jobs found. Email will not be sent.")
-        return
-
-    print("Sending job list...")
-
-    send_email(jobs)
-
-
-if __name__ == "__main__":
-    main()
+    "artificial intelligence": 8,
+    "machine learning": 8,
+}
