@@ -2,7 +2,7 @@ name: BYU-Idaho Faculty Job Alert
 
 on:
   schedule:
-    - cron: "3 18 * * 1,4" 
+    - cron: "3 17 * * 1,4" 
     
   workflow_dispatch:
 
