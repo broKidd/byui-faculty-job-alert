@@ -2,7 +2,8 @@ name: BYU-Idaho Faculty Job Alert
 
 on:
   schedule:
-    - cron: "17 14 * * 1,5" 
+    - cron: "17 8 * * 1,6"
+      timezone: "America/Denver"
     
   workflow_dispatch:
 
