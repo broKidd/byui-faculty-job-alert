@@ -22,7 +22,7 @@ BASE_URL = (
 )
 
 # Email recipient
-RECIPIENT_EMAIL = "dafeed00@yahoo.com"
+RECIPIENT_EMAIL = os.environ["YAHOO_EMAIL"]
 
 
 # ============================================================
