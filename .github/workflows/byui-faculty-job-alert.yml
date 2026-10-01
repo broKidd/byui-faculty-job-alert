@@ -1,4 +1,5 @@
 name: BYU-Idaho Faculty Job Alert
+# Schedule test
 
 on:
   workflow_dispatch:
